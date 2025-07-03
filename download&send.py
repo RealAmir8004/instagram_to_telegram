@@ -4,12 +4,13 @@ from telegram import Bot
 from telegram.error import RetryAfter, TimedOut
 import instaloader
 
-INPUT = "inputs_URL.txt"
+INPUT = "URL_inputs.txt"
+SENT_LOG = "sent_videos_log.txt"
+DOWNLOAD_LOG = "downloaded_urls_log.txt"
 FOLDER = "dowloaded_from_insta"
 BOT_TOKEN = '7348207324:AAFps7dQ-SJHlXTrrXSlBLf1OVfGblfDegw'
 CHAT_ID = XXXXXX  
-SENT_LOG = "sent_videos.txt"
-DOWNLOAD_LOG = "downloaded_urls.txt"
+# CHAT_ID can discover by"https://api.telegram.org/bot7348207324:AAFps7dQ-SJHlXTrrXSlBLf1OVfGblfDegw/getUpdates" or other methodes
 
 class MainController:
     def __init__(self):
@@ -23,7 +24,6 @@ class MainController:
 
     def load_sent_videos(self):
         if not os.path.exists(SENT_LOG):
-            print(f"{SENT_LOG} does not exist. Returning empty set.")
             return set()
         with open(SENT_LOG, "r", encoding="utf-8") as f:
             return set(line.strip() for line in f)
@@ -34,7 +34,6 @@ class MainController:
 
     def load_downloaded_urls(self):
         if not os.path.exists(DOWNLOAD_LOG):
-            print(f"{DOWNLOAD_LOG} does not exist. Returning empty set.")
             return set()
         with open(DOWNLOAD_LOG, "r", encoding="utf-8") as f:
             return set(line.strip() for line in f)
@@ -44,69 +43,68 @@ class MainController:
             f.write(url + "\n")
 
     def download_from_insta(self, url):
-        shortcode = url.rstrip("/").split("/")[-1]
-        # Search for mp4 files in FOLDER that contain the shortcode
         if url in self.downloaded_urls:
-            print(f"URL already downloaded: {url}")
-            mp4_files = [f for f in os.listdir(FOLDER) if f.endswith('.mp4') and shortcode in f]
-            print(f"Found {len(mp4_files)} mp4 files for shortcode {shortcode} in {FOLDER}")
-            return [os.path.join(FOLDER, f) for f in mp4_files]
+            print(f"files already downloaded for url={url}")
+            return True
         try:
-            print(f"Downloading post for shortcode: {shortcode}")
+            print(f"Downloading post for url: {url}")
+            shortcode = url.rstrip("/").split("/")[-1]
             self.D.dirname_pattern = FOLDER
             self.D.download_post(instaloader.Post.from_shortcode(self.D.context, shortcode), target=shortcode)
-            # After download, search for mp4 files in FOLDER that contain the shortcode
-            mp4_files = [f for f in os.listdir(FOLDER) if f.endswith('.mp4') and shortcode in f]
-            print(f"Downloaded {len(mp4_files)} mp4 files for shortcode {shortcode} in {FOLDER}")
             self.save_downloaded_url(url)
-            return [os.path.join(FOLDER, f) for f in mp4_files]
+            print(f"Downloaded files for url={url}")
+            return True
         except Exception as e:
-            print(f"Failed to download {url}: {e}")
-            return []
+            print(f"Failed to download url={url}   : {e}")
+            return False
 
-    async def run(self):
+    async def send_to_telegram(self , video_path):
+        filename = os.path.basename(video_path)
+        if filename in self.sent_videos:
+            print(f"already sented file={filename}")
+            return
+        base_name = filename[:-4]
+        txt_path = os.path.join(FOLDER, base_name + '.txt')
+        caption = ''
+        if os.path.exists(txt_path):
+            print(f"Loading caption from {txt_path}")
+            with open(txt_path, 'r', encoding='utf-8') as f:
+                caption = f.read()
+        print(f"Sending: {filename} to tel id : {CHAT_ID}")
+        sent = False
+        while not sent:
+            try:
+                with open(video_path, 'rb') as video_file:
+                    print(f"Uploading {filename}...")
+                    await self.bot.send_video(
+                        chat_id=CHAT_ID,
+                        video=video_file,
+                        caption=caption[:1024],
+                    )
+                self.save_sent_video(filename)
+                print(f"Sent and logged: {filename}")
+                sent = True
+                await asyncio.sleep(5)
+            except RetryAfter as e:
+                print(f"Flood control: waiting {e.retry_after} seconds")
+                await asyncio.sleep(e.retry_after)
+            except TimedOut:
+                print("Error: Timed out")
+                await asyncio.sleep(10)
+            except Exception as e:
+                print(f"Error: {e}")
+                await asyncio.sleep(10)
+                sent = True # ignore and skip 
+
+
+    def run(self):
         for url in self.urls:
-            mp4_files = self.download_from_insta(url)
-            if not mp4_files:
-                print(f"continue loop :No mp4 files found for {url}")
-                continue
+            self.download_from_insta(url)
 
         for video_path in [os.path.join(FOLDER, f) for f in os.listdir(FOLDER) if f.endswith('.mp4')]:
-            filename = os.path.basename(video_path)
-            if filename not in self.sent_videos:
-                base_name = filename[:-4]
-                txt_path = os.path.join(FOLDER, base_name + '.txt')
-                caption = ''
-                if os.path.exists(txt_path):
-                    print(f"Loading caption from {txt_path}")
-                    with open(txt_path, 'r', encoding='utf-8') as f:
-                        caption = f.read()
-                print(f"Sending: {filename} to tel id : {CHAT_ID}")
-                sent = False
-                while not sent:
-                    try:
-                        with open(video_path, 'rb') as video_file:
-                            print(f"Uploading {filename}...")
-                            await self.bot.send_video(
-                                chat_id=CHAT_ID,
-                                video=video_file,
-                                caption=caption[:1024],
-                            )
-                        self.save_sent_video(filename)
-                        print(f"Sent and logged: {filename}")
-                        sent = True
-                        await asyncio.sleep(5)
-                    except RetryAfter as e:
-                        print(f"Flood control: waiting {e.retry_after} seconds")
-                        await asyncio.sleep(e.retry_after)
-                    except TimedOut:
-                        print("Error: Timed out")
-                        await asyncio.sleep(10)
-                    except Exception as e:
-                        print(f"Error: {e}")
-                        await asyncio.sleep(10)
-                        sent = True  # Skip this file after error
+            asyncio.run(self.send_to_telegram(video_path))
+
 
 if __name__ == "__main__":
     contoller = MainController()
-    asyncio.run(contoller.run())
+    contoller.run()
