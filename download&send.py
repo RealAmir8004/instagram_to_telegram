@@ -97,14 +97,46 @@ class MainController:
                 sent = True # ignore and skip 
 
 
-    def run(self):
+    def run(self , mode):
+if mode == 1 or mode == 2:
         for url in self.urls:
             self.download_from_insta(url)
+if not self.urls:
+                print(f"{INPUT} file was empty")
 
+if mode == 1 or mode == 3:
         for video_path in [os.path.join(FOLDER, f) for f in os.listdir(FOLDER) if f.endswith('.mp4')]:
             asyncio.run(self.send_to_telegram(video_path))
 
 
+def menu_choose():
+    print("Choose mode:")
+    print("[1] Download & Send")
+    print("[2] Download only")
+    print("[3] Send only")
+    print("[4] force re-download previous links (clear download log )")
+    print("[5] force re-send previous downloadeds (clear sent log )")
+    while True:
+        print("\nPlease enter 1, 2, 3, 4, or 5: ", end='', flush=True)
+        key = msvcrt.getch()
+        if key == b'1':
+            print('1')
+            return 1
+        elif key == b'2':
+            print('2')
+            return 2
+        elif key == b'3':
+            print('3')
+            return 3
+        elif key == b'4':
+            print('4')
+            open(DOWNLOAD_LOG, "w", encoding="utf-8").close()
+            print("cleared download log successfully")
+        elif key == b'5':
+            print('5')
+            open(SENT_LOG, "w", encoding="utf-8").close()
+            print("cleared sent log successfully")
+
 if __name__ == "__main__":
-    contoller = MainController()
-    contoller.run()
+    controller = MainController()
+    controller.run(menu_choose())
