@@ -3,14 +3,12 @@ import asyncio
 from telegram import Bot
 from telegram.error import RetryAfter, TimedOut
 import instaloader
+from config import BOT_TOKEN, CHAT_ID
 
 INPUT = "URL_inputs.txt"
 SENT_LOG = "sent_videos_log.txt"
 DOWNLOAD_LOG = "downloaded_urls_log.txt"
 FOLDER = "dowloaded_from_insta"
-BOT_TOKEN = '7348207324:AAFps7dQ-SJHlXTrrXSlBLf1OVfGblfDegw'
-CHAT_ID = XXXXXX  
-# CHAT_ID can discover by"https://api.telegram.org/bot7348207324:AAFps7dQ-SJHlXTrrXSlBLf1OVfGblfDegw/getUpdates" or other methodes
 
 class MainController:
     def __init__(self):
