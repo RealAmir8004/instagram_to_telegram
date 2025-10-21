@@ -1,3 +1,4 @@
+import msvcrt
 import os
 import asyncio
 from telegram import Bot
@@ -6,12 +7,15 @@ import instaloader
 from config import BOT_TOKEN, CHAT_ID
 
 INPUT = "URL_inputs.txt"
-SENT_LOG = "sent_videos_log.txt"
-DOWNLOAD_LOG = "downloaded_urls_log.txt"
+SENT_LOG = "sent_videos.log"
+DOWNLOAD_LOG = "downloaded_urls.log"
 FOLDER = "dowloaded_from_insta"
 
 class MainController:
     def __init__(self):
+        if not os.path.exists(INPUT):
+            print(f"Error: {INPUT} file not found! Please create it with one URL per line.")
+            open(INPUT, "w", encoding="utf-8").close()
         with open(INPUT, "r", encoding="utf-8") as f:
             self.urls = [line.strip() for line in f if line.strip()]
         self.D = instaloader.Instaloader(dirname_pattern="{target}", save_metadata=False, download_comments=False)
@@ -96,15 +100,15 @@ class MainController:
 
 
     def run(self , mode):
-if mode == 1 or mode == 2:
-        for url in self.urls:
-            self.download_from_insta(url)
-if not self.urls:
+        if mode == 1 or mode == 2:
+            for url in self.urls:
+                self.download_from_insta(url)
+            if not self.urls:
                 print(f"{INPUT} file was empty")
 
-if mode == 1 or mode == 3:
-        for video_path in [os.path.join(FOLDER, f) for f in os.listdir(FOLDER) if f.endswith('.mp4')]:
-            asyncio.run(self.send_to_telegram(video_path))
+        if mode == 1 or mode == 3:
+            for video_path in [os.path.join(FOLDER, f) for f in os.listdir(FOLDER) if f.endswith('.mp4')]:
+                asyncio.run(self.send_to_telegram(video_path))
 
 
 def menu_choose():
