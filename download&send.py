@@ -1,19 +1,21 @@
+import msvcrt
 import os
 import asyncio
 from telegram import Bot
 from telegram.error import RetryAfter, TimedOut
 import instaloader
+from config import BOT_TOKEN, CHAT_ID
 
 INPUT = "URL_inputs.txt"
-SENT_LOG = "sent_videos_log.txt"
-DOWNLOAD_LOG = "downloaded_urls_log.txt"
+SENT_LOG = "sent_videos.log"
+DOWNLOAD_LOG = "downloaded_urls.log"
 FOLDER = "dowloaded_from_insta"
-BOT_TOKEN = '7348207324:AAFps7dQ-SJHlXTrrXSlBLf1OVfGblfDegw'
-CHAT_ID = XXXXXX  
-# CHAT_ID can discover by"https://api.telegram.org/bot7348207324:AAFps7dQ-SJHlXTrrXSlBLf1OVfGblfDegw/getUpdates" or other methodes
 
 class MainController:
     def __init__(self):
+        if not os.path.exists(INPUT):
+            print(f"Error: {INPUT} file not found! Please create it with one URL per line.")
+            open(INPUT, "w", encoding="utf-8").close()
         with open(INPUT, "r", encoding="utf-8") as f:
             self.urls = [line.strip() for line in f if line.strip()]
         self.D = instaloader.Instaloader(dirname_pattern="{target}", save_metadata=False, download_comments=False)
@@ -97,14 +99,46 @@ class MainController:
                 sent = True # ignore and skip 
 
 
-    def run(self):
-        for url in self.urls:
-            self.download_from_insta(url)
+    def run(self , mode):
+        if mode == 1 or mode == 2:
+            for url in self.urls:
+                self.download_from_insta(url)
+            if not self.urls:
+                print(f"{INPUT} file was empty")
 
-        for video_path in [os.path.join(FOLDER, f) for f in os.listdir(FOLDER) if f.endswith('.mp4')]:
-            asyncio.run(self.send_to_telegram(video_path))
+        if mode == 1 or mode == 3:
+            for video_path in [os.path.join(FOLDER, f) for f in os.listdir(FOLDER) if f.endswith('.mp4')]:
+                asyncio.run(self.send_to_telegram(video_path))
 
+
+def menu_choose():
+    print("Choose mode:")
+    print("[1] Download & Send")
+    print("[2] Download only")
+    print("[3] Send only")
+    print("[4] force re-download previous links (clear download log )")
+    print("[5] force re-send previous downloadeds (clear sent log )")
+    while True:
+        print("\nPlease enter 1, 2, 3, 4, or 5: ", end='', flush=True)
+        key = msvcrt.getch()
+        if key == b'1':
+            print('1')
+            return 1
+        elif key == b'2':
+            print('2')
+            return 2
+        elif key == b'3':
+            print('3')
+            return 3
+        elif key == b'4':
+            print('4')
+            open(DOWNLOAD_LOG, "w", encoding="utf-8").close()
+            print("cleared download log successfully")
+        elif key == b'5':
+            print('5')
+            open(SENT_LOG, "w", encoding="utf-8").close()
+            print("cleared sent log successfully")
 
 if __name__ == "__main__":
-    contoller = MainController()
-    contoller.run()
+    controller = MainController()
+    controller.run(menu_choose())
