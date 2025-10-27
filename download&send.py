@@ -66,7 +66,7 @@ class MainController:
             print(f"Downloaded files for url={url}")
             return True
         except Exception as e:
-            print(f"Failed to download url={url}   : {e}")
+            print(f"Failed to download url →it may be deleted={url}   : '{e}'")
             return False
 
     async def send_to_telegram(self , video_path):
@@ -127,8 +127,12 @@ class MainController:
                 print(f"{INPUT} file was empty")
 
         if mode == 1 or mode == 3:
-            for video_path in [os.path.join(FOLDER, f) for f in os.listdir(FOLDER) if f.endswith('.mp4')]:
-                asyncio.run(self.send_to_telegram(video_path))
+            async def send_all_videos():
+                for video_path in [os.path.join(FOLDER, f) for f in os.listdir(FOLDER) if f.endswith('.mp4')]:
+                    await self.send_to_telegram(video_path)
+            
+            # Run all videos in a single event loop
+            asyncio.run(send_all_videos())
 
 
 def menu_choose():

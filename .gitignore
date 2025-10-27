@@ -1,2 +1,4 @@
 */
 *.txt
+sent_videos.log
+downloaded_urls.log
