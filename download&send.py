@@ -5,6 +5,7 @@ from telegram import Bot
 from telegram.error import RetryAfter, TimedOut
 import instaloader
 from config import BOT_TOKEN, CHAT_ID
+import sys
 
 INPUT = "URL_inputs.txt"
 SENT_LOG = "sent_videos.log"
@@ -118,8 +119,9 @@ def menu_choose():
     print("[3] Send only")
     print("[4] force re-download previous links (clear download log )")
     print("[5] force re-send previous downloadeds (clear sent log )")
+    print("[6] Cancel & exit")
     while True:
-        print("\nPlease enter 1, 2, 3, 4, or 5: ", end='', flush=True)
+        print("\nPlease enter 1, 2, 3, 4, 5, or 6: ", end='', flush=True)
         key = msvcrt.getch()
         if key == b'1':
             print('1')
@@ -138,6 +140,9 @@ def menu_choose():
             print('5')
             open(SENT_LOG, "w", encoding="utf-8").close()
             print("cleared sent log successfully")
+        elif key == b'6':
+            print('6')
+            sys.exit()
 
 if __name__ == "__main__":
     controller = MainController()
