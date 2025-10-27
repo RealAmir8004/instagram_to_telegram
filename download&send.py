@@ -17,13 +17,21 @@ class MainController:
         if not os.path.exists(INPUT):
             print(f"Error: {INPUT} file not found! Please create it with one URL per line.")
             open(INPUT, "w", encoding="utf-8").close()
-        with open(INPUT, "r", encoding="utf-8") as f:
-            self.urls = [line.strip() for line in f if line.strip()]
+        self.urls = self.generate_static_url()
         self.D = instaloader.Instaloader(dirname_pattern="{target}", save_metadata=False, download_comments=False)
         # self.D.login('realamir8004')
         self.bot = Bot(token=BOT_TOKEN)
         self.sent_videos = self.load_sent_videos()
         self.downloaded_urls = self.load_downloaded_urls()
+
+    def generate_static_url(self):
+        urls =[]
+        with open(INPUT,  "r", encoding="utf-8") as f:
+            for line in f :
+                url = line.strip()
+                if '/reel/' in url:
+                    urls.append(url.split('?')[0])
+        return urls
 
     def load_sent_videos(self):
         if not os.path.exists(SENT_LOG):

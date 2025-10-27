@@ -25,9 +25,6 @@ This bot automatically downloads Instagram reels and uploads them to Telegram ch
    https://www.instagram.com/reel/ABC123xyz/
    https://www.instagram.com/reel/XYZ789abc/
    ```
-   Note: Only use "static" URLs without query parameters:
-   - ✓ `https://www.instagram.com/reel/ABC123xyz/`
-   - ✖ `https://www.instagram.com/reel/ABC123xyz/?utm_source=ig_web_copy_link`
 
 3. Run : download&send.py
 
