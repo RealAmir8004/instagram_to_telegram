@@ -83,8 +83,12 @@ class MainController:
                 caption = f.read()
         print(f"Sending: {filename} to tel id : {CHAT_ID}")
         sent = False
-        while not sent:
+        retry_count = 0
+        max_retries = 2
+        
+        while not sent and retry_count < max_retries:
             try:
+                print(f"Uploading {filename}... (Attempt {retry_count + 1}/{max_retries})")
                 with open(video_path, 'rb') as video_file:
                     print(f"Uploading {filename}...")
                     await self.bot.send_video(
@@ -99,13 +103,20 @@ class MainController:
             except RetryAfter as e:
                 print(f"Flood control: waiting {e.retry_after} seconds")
                 await asyncio.sleep(e.retry_after)
+                retry_count += 1
             except TimedOut:
                 print("Error: Timed out")
                 await asyncio.sleep(10)
+                retry_count += 1
             except Exception as e:
                 print(f"Error: {e}")
+                retry_count += 1
+                if retry_count >= max_retries:
+                    print(f"Failed to send {filename} after {max_retries} attempts. Skipping...")
                 await asyncio.sleep(10)
-                sent = True # ignore and skip 
+        
+        if not sent:
+            print(f"Giving up on {filename} after {max_retries} failed attempts")
 
 
     def run(self , mode):
